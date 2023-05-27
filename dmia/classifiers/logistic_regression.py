@@ -46,7 +46,7 @@ class LogisticRegression:
             # Hint: Use np.random.choice to generate indices. Sampling with         #
             # replacement is faster than sampling without replacement.              #
             #########################################################################
-            i = np.random.choice(a=num_train, size=batch_size, replace=True)
+            i = np.random.choice(num_train, size=batch_size, replace=True)
             X_batch = X[i]
             y_batch = y[i]
             #########################################################################
@@ -92,8 +92,8 @@ class LogisticRegression:
         # Implement this method. Store the probabilities of classes in y_proba.   #
         # Hint: It might be helpful to use np.vstack and np.sum                   #
         ###########################################################################
-            p = LogisticRegression.sigmoid(np.dot(self.w, X))
-            y_proba = np.vstack(1 - p, p)
+            p = self.sigmoid(X.dot(self.w.T))
+            y_proba = np.vstack((1 - p, p)).T
         ###########################################################################
         #                           END OF YOUR CODE                              #
         ###########################################################################
@@ -117,8 +117,7 @@ class LogisticRegression:
         # Implement this method. Store the predicted labels in y_pred.            #
         ###########################################################################
         y_proba = self.predict_proba(X, append_bias=True)
-        y_pred = y_proba >= 0.5
-        y_pred = y_pred.astype(int)
+        y_pred = np.argmax(y_proba, axis=1)
 
         ###########################################################################
         #                           END OF YOUR CODE                              #
@@ -139,12 +138,12 @@ class LogisticRegression:
         loss = 0
 
         # Compute loss and gradient. Your code should not contain python loops.
-        z = np.dot(X_batch, self.w)
+        z = X_batch.dot(self.w)
         h = self.sigmoid(z)
         m = X_batch.shape[0]
 
-        loss = (-y_batch * np.log(h) - (1 - y_batch) * np.log(1 - h)).mean()
-        dw = np.dot(X_batch.T, (h - y_batch)) / y_batch.shape[0]
+        loss = np.dot(-y_batch, np.log(h)) - np.dot((1 - y_batch), np.log(1 - h)).mean()
+        dw = X_batch.T.dot(h - y_batch)
 
         # Right now the loss is a sum over all training examples, but we want it
         # to be an average instead, so we divide by num_train.
@@ -155,7 +154,7 @@ class LogisticRegression:
 
         # Add regularization to the loss and gradient.
         # Note that you have to exclude bias term in regularization.
-        loss += reg * np.sum(self.w * self.w)
+        loss += reg * np.dot(self.w[:-1], self.w[:-1])
         dw += reg * self.w
 
         return loss, dw
